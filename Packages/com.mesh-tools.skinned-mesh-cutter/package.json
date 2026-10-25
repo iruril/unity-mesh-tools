@@ -1,0 +1,11 @@
+{
+  "name": "com.mesh-tools.skinned-mesh-cutter",
+  "version": "1.1.0",
+  "displayName": "MeshTools Skinned Mesh Cutter",
+  "description": "Editor tools for skinned mesh cutting, triangle masks, cap UV editing and prefab export.",
+  "unity": "2022.3",
+  "dependencies": {
+    "com.unity.probuilder": "5.2.4",
+    "bz-soft.ragdoll-helper": "1.6.1"
+  }
+}

@@ -1,0 +1,6 @@
+* text=auto
+*.cs text eol=crlf
+*.shader text eol=crlf
+*.json text eol=lf
+*.md text eol=lf
+*.meta text eol=lf

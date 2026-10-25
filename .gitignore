@@ -1,0 +1,13 @@
+# The repository contains source packages only.
+.DS_Store
+Thumbs.db
+.vs/
+.idea/
+*.csproj
+*.sln
+*.slnx
+**/Library/
+**/Temp/
+**/Logs/
+**/obj/
+**/UserSettings/
