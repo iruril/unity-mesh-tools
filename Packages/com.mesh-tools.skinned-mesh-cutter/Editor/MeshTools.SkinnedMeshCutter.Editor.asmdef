@@ -1,7 +1,11 @@
 {
   "name": "MeshTools.SkinnedMeshCutter.Editor",
   "rootNamespace": "MeshTools.Dismemberment.Editor",
-  "references": ["Unity.ProBuilder", "BzKovSoft.RagdollHelper.Editor"],
-  "includePlatforms": ["Editor"],
+  "references": [
+    "Unity.ProBuilder"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
   "autoReferenced": true
 }

@@ -23,7 +23,7 @@ namespace MeshTools.Dismemberment.Editor
         {
             "사용 안 함 · 기존 출력 유지",
             "기존 래그돌 사용",
-            "RagdollHelper 자동 생성 후 절단"
+            "자동 래그돌 생성 후 절단"
         };
         protected virtual string[] RagdollModeLabels => RagdollLabels;
 
@@ -54,7 +54,17 @@ namespace MeshTools.Dismemberment.Editor
                 if (mode == SkinnedMeshCutRagdollMode.Generate)
                 {
                     mass = EditorGUILayout.FloatField("전체 질량 (kg)", mass);
-                    tips = EditorGUILayout.Toggle("손·발 물리 포함", tips);
+                    EditorGUILayout.LabelField("사용 중인 생성기", SkinnedMeshCutRagdollGenerator.BackendName);
+                    using (new EditorGUI.DisabledScope(!SkinnedMeshCutRagdollGenerator.HasBzHelper))
+                    {
+                        tips = EditorGUILayout.Toggle("손·발 물리 포함 (Bz)", tips);
+                    }
+
+                    if (!SkinnedMeshCutRagdollGenerator.HasBzHelper)
+                    {
+                        EditorGUILayout.HelpBox("Bz Ragdoll Helper가 없어 Unity 내장 Ragdoll Builder를 사용합니다. "
+                            + "내장 생성기는 기본 관절 구성을 생성하며 별도 손·발 강체는 추가하지 않습니다.", MessageType.None);
+                    }
                 }
 
                 if (EditorGUI.EndChangeCheck())
@@ -72,7 +82,7 @@ namespace MeshTools.Dismemberment.Editor
                 }
 
                 EditorGUILayout.HelpBox(
-                    "래그돌의 Rigidbody·관절·콜라이더 설정을 보존합니다. 실제 절단면에 걸친 구·캡슐만 Convex 메시로 바꿉니다. " + "Box는 로컬 축에 맞는 절단만 크기를 줄이고, 비스듬한 Box와 기존 MeshCollider는 원본 형상을 유지합니다.",
+                    "래그돌의 Rigidbody·관절·콜라이더 설정을 보존합니다. 실제 절단면에 걸친 구·캡슐과 비스듬하게 잘린 Box만 Convex 메시로 바꿉니다. " + "Box는 로컬 축에 맞는 절단만 크기를 줄이고, 잘리지 않은 콜라이더와 기존 MeshCollider는 원본 형상을 유지합니다.",
                     MessageType.None);
                 string error = SkinnedMeshCutRagdoll.Validate(m_source, mode, source, mass);
 

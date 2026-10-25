@@ -46,23 +46,59 @@ namespace MeshTools.Dismemberment.Editor.Tests
             ownedMeshes.Clear();
         }
 
-        /// <summary>비스듬한 절단이 박스를 콘벡스 메시로 바꾸지 않는지 확인합니다.</summary>
+        /// <summary>실제로 비스듬하게 잘린 박스만 절단 평면에 맞는 콘벡스 메시가 되는지 확인합니다.</summary>
         [Test]
-        public void AngledCut_PreservesReferenceBox()
+        public void AngledCut_ClipsIntersectingBox()
         {
             BoxCollider box = source.AddComponent<BoxCollider>();
             box.center = new Vector3(0.1f, 0.2f, 0.3f);
             box.size = new Vector3(2f, 3f, 4f);
             box.isTrigger = true;
             box.enabled = false;
-            Collider copy = Copy(box, new Plane(new Vector3(1f, 1f, 0f).normalized, 0f));
+            Plane plane = new Plane(new Vector3(1f, 1f, 0f).normalized, 0f);
+            Collider copy = Copy(box, plane);
 
-            Assert.That(copy, Is.TypeOf<BoxCollider>());
-            Assert.That(((BoxCollider)copy).center, Is.EqualTo(box.center));
-            Assert.That(((BoxCollider)copy).size, Is.EqualTo(box.size));
+            Assert.That(copy, Is.TypeOf<MeshCollider>());
+            Assert.That(((MeshCollider)copy).convex, Is.True);
             Assert.That(copy.isTrigger, Is.True);
             Assert.That(copy.enabled, Is.False);
+            foreach (Vector3 point in ((MeshCollider)copy).sharedMesh.vertices)
+            {
+                Assert.That(plane.GetDistanceToPoint(target.transform.TransformPoint(point)),
+                    Is.GreaterThanOrEqualTo(-0.00001f));
+            }
+        }
+
+        /// <summary>비스듬한 평면이라도 박스가 온전히 남는 쪽에 있으면 원본 종류와 형상을 보존합니다.</summary>
+        [Test]
+        public void AngledCut_PreservesUncutBox()
+        {
+            BoxCollider box = source.AddComponent<BoxCollider>();
+            box.center = Vector3.one * 3f;
+            box.size = Vector3.one;
+            BoxCollider copy = Copy(box, new Plane(Vector3.one.normalized, 0f)) as BoxCollider;
+            Assert.That(copy, Is.Not.Null);
+            Assert.That(copy.center, Is.EqualTo(box.center));
+            Assert.That(copy.size, Is.EqualTo(box.size));
             Assert.That(ownedMeshes, Is.Empty);
+        }
+
+        /// <summary>회전과 비균일 스케일이 있는 본의 박스도 월드 절단 평면을 넘지 않습니다.</summary>
+        [Test]
+        public void AngledCut_ClipsRotatedScaledBox()
+        {
+            BoxCollider box = source.AddComponent<BoxCollider>();
+            box.size = Vector3.one * 2f;
+            target.transform.SetPositionAndRotation(new Vector3(2f, 3f, 4f), Quaternion.Euler(20f, 40f, 10f));
+            target.transform.localScale = new Vector3(1f, 2f, 0.5f);
+            Plane plane = new Plane(Vector3.one.normalized, target.transform.position);
+            MeshCollider copy = Copy(box, plane) as MeshCollider;
+            Assert.That(copy, Is.Not.Null);
+            foreach (Vector3 point in copy.sharedMesh.vertices)
+            {
+                Assert.That(plane.GetDistanceToPoint(target.transform.TransformPoint(point)),
+                    Is.GreaterThanOrEqualTo(-0.00001f));
+            }
         }
 
         /// <summary>축에 맞는 절단은 메시 변환 없이 박스 중심과 크기만 맞추는지 확인합니다.</summary>

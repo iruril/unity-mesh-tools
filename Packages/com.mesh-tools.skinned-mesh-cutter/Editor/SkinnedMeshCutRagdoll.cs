@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BzKovSoft.RagdollHelper.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -73,7 +72,7 @@ namespace MeshTools.Dismemberment.Editor
             if (animator == null || animator.avatar == null || !animator.avatar.isValid
                 || !animator.isHuman)
             {
-                return "RagdollHelper 자동 생성에는 유효한 Humanoid Animator가 필요합니다. Generic 리그는 기존 래그돌을 지정하세요.";
+                return "자동 래그돌 생성에는 유효한 Humanoid Animator가 필요합니다. Generic 리그는 기존 래그돌을 지정하세요.";
             }
 
             if (float.IsNaN(mass) || float.IsInfinity(mass) || mass <= 0f)
@@ -143,7 +142,7 @@ namespace MeshTools.Dismemberment.Editor
             }
         }
 
-        /// <summary>스킨과 Humanoid 본만 복제한 작성 포즈에서 Ragdoll Helper를 실행합니다.</summary>
+        /// <summary>스킨과 Humanoid 본을 복제한 작성 포즈에서 선택된 래그돌 생성기를 실행합니다.</summary>
         private Transform GeneratePhysicsRig(
             SkinnedMeshRenderer source,
             Transform rig,
@@ -189,21 +188,14 @@ namespace MeshTools.Dismemberment.Editor
             Quaternion authorRotation = Root.transform.rotation;
             // 자동 생성기의 전방 기준을 고정한 뒤 작성 포즈의 월드 회전을 복원한다.
             Root.transform.rotation = Quaternion.identity;
-            new Ragdoller(renderer.transform, Root.transform.forward).ApplyRagdoll(
-                mass,
-                new RagdollProperties
-                {
-                    rigidDrag = defaults.Drag,
-                    rigidAngularDrag = defaults.AngularDrag,
-                    createTips = tips,
-                    isKinematic = false,
-                    useGravity = true
-                });
+            SkinnedMeshCutRagdollGenerator.Generate(renderer, animator, mass, tips);
             Root.transform.rotation = authorRotation;
 
             foreach (Rigidbody body in Root.GetComponentsInChildren<Rigidbody>(true))
             {
-                body.interpolation = defaults.Interpolation;
+                defaults.ApplyPhysics(body);
+                body.isKinematic = false;
+                body.useGravity = true;
             }
 
             // 준비한 프리팹을 직접 사용해도 애니메이션이 물리 자세를 덮어쓰지 않도록 한다.

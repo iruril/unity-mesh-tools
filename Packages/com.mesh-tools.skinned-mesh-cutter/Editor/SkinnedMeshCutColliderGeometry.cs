@@ -9,11 +9,12 @@ namespace MeshTools.Dismemberment.Editor
     // 볼록 껍질은 최대 정점 64개와 면 124개로, PhysX의 볼록 메시 제한인 255면을 넘지 않는다.
     internal static class SkinnedMeshCutColliderGeometry
     {
-        /// <summary>레퍼런스 형상을 보존하고 절단면을 가로지르는 구·캡슐만 볼록 메시로 잘라 복사합니다.</summary>
+        /// <summary>레퍼런스를 보존하고 실제 절단된 곡면 및 비스듬한 박스만 볼록 메시로 잘라 복사합니다.</summary>
         internal static Collider CopyClipped(Collider source, Transform target, Plane[] planes, List<Mesh> meshes)
         {
             bool curved = source is SphereCollider || source is CapsuleCollider;
-            if (!curved)
+            bool obliqueBox = source is BoxCollider sourceBox && RequiresObliqueBoxClip(sourceBox, target, planes);
+            if (!curved && !obliqueBox)
             {
                 if (IsOutsideRetainedSide(source, target, planes))
                 {
@@ -29,28 +30,41 @@ namespace MeshTools.Dismemberment.Editor
                 return copy;
             }
 
-            foreach (Plane plane in planes)
+            if (curved)
             {
-                if (plane.GetDistanceToPoint(CurvedSupport(source, target, plane.normal)) < -0.00001f)
+                foreach (Plane plane in planes)
                 {
-                    return null;
+                    if (plane.GetDistanceToPoint(CurvedSupport(source, target, plane.normal)) < -0.00001f)
+                    {
+                        return null;
+                    }
+                }
+
+                bool unchanged = planes.All(plane =>
+                    plane.GetDistanceToPoint(CurvedSupport(source, target, -plane.normal)) >= -0.00001f);
+                if (unchanged)
+                {
+                    return CopyReferenceCollider(source, target);
                 }
             }
-
-            bool unchanged = planes.All(plane =>
-                plane.GetDistanceToPoint(CurvedSupport(source, target, -plane.normal)) >= -0.00001f);
-            if (unchanged)
+            else if (IsOutsideRetainedSide(source, target, planes))
             {
-                return CopyReferenceCollider(source, target);
+                return null;
             }
 
             Vector3[] local = Points(source, target);
             Vector3[] world = local.Select(target.TransformPoint).ToArray();
-            Mesh hull = Hull(world.Concat(planes.SelectMany(plane => new[]
+            IEnumerable<Vector3> hullPoints = world;
+            if (curved)
             {
-                CurvedSupport(source, target, plane.normal),
-                CurvedSupport(source, target, -plane.normal)
-            })));
+                hullPoints = world.Concat(planes.SelectMany(plane => new[]
+                {
+                    CurvedSupport(source, target, plane.normal),
+                    CurvedSupport(source, target, -plane.normal)
+                }));
+            }
+
+            Mesh hull = Hull(hullPoints);
 
             if (hull == null)
             {
@@ -172,6 +186,32 @@ namespace MeshTools.Dismemberment.Editor
             return false;
         }
 
+        /// <summary>박스와 실제 교차하는 평면 중 로컬 축으로 표현할 수 없는 절단이 있는지 확인합니다.</summary>
+        private static bool RequiresObliqueBoxClip(BoxCollider box, Transform target, Plane[] planes)
+        {
+            Vector3 extents = box.size * 0.5f;
+            Vector3 center = target.TransformPoint(box.center);
+            foreach (Plane plane in planes)
+            {
+                Vector3 normal = target.localToWorldMatrix.transpose.MultiplyVector(plane.normal);
+                if (AxisAligned(normal))
+                {
+                    continue;
+                }
+
+                float radius = Mathf.Abs(normal.x) * extents.x
+                    + Mathf.Abs(normal.y) * extents.y + Mathf.Abs(normal.z) * extents.z;
+                float distance = plane.GetDistanceToPoint(center);
+                if (distance - radius < -0.00001f && distance + radius > 0.00001f)
+                {
+                    // 사선 단면은 BoxCollider로 표현할 수 없으므로 실제로 잘린 이 박스만 변환한다.
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>박스는 종류를 유지하고 로컬 축에 맞는 절단일 때만 중심과 크기를 줄입니다.</summary>
         private static void ClipAxisAlignedBox(BoxCollider box, Transform target, Plane[] planes)
         {
@@ -265,6 +305,19 @@ namespace MeshTools.Dismemberment.Editor
         /// <summary>콜라이더 형상을 구성하는 표본 점을 수집합니다.</summary>
         private static Vector3[] Points(Collider collider, Transform target)
         {
+            if (collider is BoxCollider box)
+            {
+                Vector3[] corners = new Vector3[8];
+                for (int i = 0; i < corners.Length; i++)
+                {
+                    corners[i] = box.center + Vector3.Scale(box.size * 0.5f,
+                        new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f,
+                            (i & 4) == 0 ? -1f : 1f));
+                }
+
+                return corners;
+            }
+
             CurvedShape(
                 collider,
                 target,

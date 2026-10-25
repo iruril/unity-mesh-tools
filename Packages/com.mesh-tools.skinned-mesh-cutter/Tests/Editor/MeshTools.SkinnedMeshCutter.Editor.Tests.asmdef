@@ -2,8 +2,7 @@
   "name": "MeshTools.SkinnedMeshCutter.Editor.Tests",
   "rootNamespace": "MeshTools.Dismemberment.Editor.Tests",
   "references": [
-    "MeshTools.SkinnedMeshCutter.Editor",
-    "BzKovSoft.RagdollHelper.Editor"
+    "MeshTools.SkinnedMeshCutter.Editor"
   ],
   "includePlatforms": [
     "Editor"
