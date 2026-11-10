@@ -2,9 +2,9 @@
 
 Unity 2022.3 LTS와 Unity 6에서 사용하는 공용 스킨드 메시 절단 편집기 패키지입니다.
 
-## 1.2.0
+## 1.2.1
 
-`MeshTools > Model Mesh Cutter`에서 공용 모델 편집 창을 엽니다.
+`Tools > Skeletal Mesh Cutter`에서 공용 모델 편집 창을 엽니다.
 
 - 모델 루트를 지정하면 하위 SkinnedMeshRenderer가 기본으로 모두 선택됩니다. 메시를 개별 선택해 같은 평면으로 절단할 수 있습니다.
 - 마스크 탭의 `마스크 편집 메시`에서 메시를 전환하며 독립적으로 칠합니다. 출력 탭에서 공용 프리셋을 저장하면 메시 선택, 각 메시의 마스크, 콜라이더 제외 설정을 함께 저장합니다.
@@ -14,19 +14,19 @@ Unity 2022.3 LTS와 Unity 6에서 사용하는 공용 스킨드 메시 절단 �
 - 출력은 메시별 이름, 부모 계층, 재질과 본 연결을 보존합니다. 선택한 메시에서 PART와 REMAIN을 생성하며, 원본 적용과 씬 생성은 출력 탭의 설정을 따릅니다.
 - 기존 단일 메시 공용 프리셋도 불러올 수 있습니다. TheIRONY의 부위별 배치 프리셋은 게임 프로젝트의 전용 형식입니다.
 
-기본 `Skinned Mesh Cutter` 메뉴도 공용 모델 창을 사용합니다. 프로젝트가 `WindowFactory`를 등록한 경우 `Model Mesh Cutter` 메뉴로 공용 창을 직접 열 수 있습니다.
+공용 메뉴는 `Tools > Skeletal Mesh Cutter` 하나입니다. 기존 `SkinnedMeshCutterLauncher.Open`과 `WindowFactory` API는 프로젝트 전용 메뉴의 호환성을 위해 유지합니다. 공용 메뉴는 등록된 전용 창과 독립적으로 공용 모델 창을 엽니다.
 
-1.2.0은 MIT 라이선스로 제공하며, 설치할 때 `v1.2.0` 태그를 지정합니다.
+1.2.1은 MIT 라이선스로 제공하며, 설치할 때 `v1.2.1` 태그를 지정합니다.
 
 ## 로컬 개발과 프로젝트 연동
 
-TheIRONY와 StylishActionGame은 아래 설치 절의 `v1.2.0` Git URL을 사용합니다. 패키지 자체를 수정할 때만 이 저장소의 로컬 폴더로 전환합니다. 로컬 연결에서는 코드를 수정한 뒤 Unity에서 Refresh하면 적용됩니다.
+StylishActionGame은 아래 설치 절의 `v1.2.1` Git URL을 사용합니다. TheIRONY는 현재 1.2.0을 유지하며 전용 메뉴 정리와 업데이트는 별도로 진행합니다. 패키지 자체를 수정할 때만 이 저장소의 로컬 폴더로 전환합니다. 로컬 연결에서는 코드를 수정한 뒤 Unity에서 Refresh하면 적용됩니다.
 
 ```text
 file:<저장소의 절대 경로>/Packages/com.mesh-tools.skinned-mesh-cutter
 ```
 
-`MeshTools > Model Mesh Cutter`는 공용 창이고, TheIRONY의 기존 시체·파츠 창은 게임 전용 프리셋과 런타임 연동을 유지하며 다음 공개 API를 호출합니다. 네임스페이스는 `MeshTools.Dismemberment.Editor`입니다.
+`Tools > Skeletal Mesh Cutter`는 공용 창이고, TheIRONY의 기존 시체·파츠 창은 게임 전용 프리셋과 런타임 연동을 유지하며 다음 공개 API를 호출합니다. 네임스페이스는 `MeshTools.Dismemberment.Editor`입니다.
 
 | API | 프로젝트에서 담당할 부분 |
 | --- | --- |
@@ -41,16 +41,16 @@ TheIRONY의 기존 클래스 이름과 `.meta` GUID를 유지한 어댑터로 �
 
 개발 검증 프로젝트는 Unity 2022.3의 TheIRONY와 Unity 6의 StylishActionGame입니다. TheIRONY의 게임 연동 검사 51개와 공용 패키지 테스트 73개가 통과했으며, StylishActionGame의 Unity 6000.3.23f1 / ProBuilder 6.1.4에서도 패키지 EditMode 테스트 73개가 모두 통과했습니다.
 
-StylishActionGame의 `manifest.json`에는 [Unity의 패키지 테스트 공개 설정](https://docs.unity3d.com/kr/6000.0/Manual/upm-manifestPrj.html)인 `testables`를 추가했습니다. Test Runner의 EditMode에서 `MeshTools.SkinnedMeshCutter.Editor.Tests`를 선택해 다시 실행할 수 있습니다. 공용 창은 `MeshTools > Model Mesh Cutter`에서 엽니다.
+1.2.1부터 배포 패키지에는 테스트 어셈블리나 검증 스크립트를 포함하지 않습니다. 개발 검증은 `Development/Tests/Editor`를 검증용 Unity 프로젝트의 `Assets/Editor` 아래에 복사해서 실행합니다. 소비 프로젝트에는 테스트용 `testables` 설정이 필요하지 않습니다.
 
-## 1.2.0 설치
+## 1.2.1 설치
 
 GitHub private 저장소에 접근할 수 있는 계정으로 Git 인증을 준비하고,
 Unity Package Manager에서 다음 URL을 설치합니다.
 인증 토큰을 설치 URL이나 프로젝트 파일에 넣지 않습니다.
 
 ```text
-https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.0
+https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.1
 ```
 
 | Unity | 프로젝트의 ProBuilder 버전 |
@@ -73,7 +73,7 @@ Unity 내장 생성기는 기본 11개 강체 구성을 사용합니다. 별도 
 
 ## 패키지 업데이트
 
-절단 패키지의 Git URL을 위의 1.2.0 태그로 업데이트합니다.
+절단 패키지의 Git URL을 위의 1.2.1 태그로 업데이트합니다.
 프로젝트에서 별도로 설치한 래그돌 생성기는 계속 사용할 수 있습니다.
 
 ## 절단 콜라이더
@@ -88,7 +88,7 @@ Unity 내장 생성기는 기본 11개 강체 구성을 사용합니다. 별도 
 ## 구성과 개발
 
 - `Packages/com.mesh-tools.skinned-mesh-cutter/Editor`: 절단, 캡 UV, 마스크 편집, 래그돌 출력.
-- `Packages/com.mesh-tools.skinned-mesh-cutter/Tests/Editor`: 외부 모델 없는 공용 회귀 테스트.
+- `Development/Tests/Editor`: 개발용 공용 회귀 테스트. UPM 배포 경로 밖에 있어 설치 패키지에 포함되지 않습니다.
 - 게임 전용 편집 창 확장, 씬, 모델 및 생성 에셋은 각 게임 프로젝트에서 관리합니다.
 
 이 저장소를 수정하고 Unity 2022.3과 Unity 6에서 검증한 뒤 새 태그를 배포합니다.

@@ -7,8 +7,7 @@ namespace MeshTools.Dismemberment.Editor
     {
         public static Func<SkinnedMeshCutterWindowBase> WindowFactory { get; set; }
 
-        /// <summary>선택한 스킨을 사용할 절단 도구 창을 엽니다.</summary>
-        [MenuItem("MeshTools/Skinned Mesh Cutter")]
+        /// <summary>기존 프로젝트 전용 진입점에서 등록된 확장 창 또는 공용 창을 엽니다.</summary>
         public static void Open()
         {
             var window = WindowFactory != null

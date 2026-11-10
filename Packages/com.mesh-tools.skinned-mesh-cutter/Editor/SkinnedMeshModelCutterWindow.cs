@@ -17,7 +17,9 @@ namespace MeshTools.Dismemberment.Editor
         private readonly Dictionary<SkinnedMeshRenderer, SkinnedMeshRenderer> m_authorRenderers = new Dictionary<SkinnedMeshRenderer, SkinnedMeshRenderer>();
         private SkinnedMeshCutPreviewStage m_authorStage;
 
-        [MenuItem("MeshTools/Model Mesh Cutter")]
+        protected override string WindowTitle => "Skeletal Mesh Cutter";
+
+        [MenuItem("Tools/Skeletal Mesh Cutter")]
         public static void OpenModelCutter()
         {
             var window = GetWindow<SkinnedMeshModelCutterWindow>();

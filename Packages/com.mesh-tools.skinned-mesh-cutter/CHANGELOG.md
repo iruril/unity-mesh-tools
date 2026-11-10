@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.2.1 · 2026-11-10
+
+- 공용 메뉴를 `Tools > Skeletal Mesh Cutter` 하나로 통합하고 공용 창 제목을 맞춥니다.
+- 기존 `MeshTools/Skinned Mesh Cutter`, `MeshTools/Model Mesh Cutter` 메뉴를 제거합니다.
+- 기존 `SkinnedMeshCutterLauncher.Open`, `WindowFactory`, `OpenModelCutter` API와 프리셋 형식은 유지합니다.
+- 테스트와 검증 코드를 배포 UPM 경로 밖의 `Development/Tests`로 이동합니다. 설치 패키지에는 툴 코드만 포함합니다.
+
 ## 1.2.0 · 2026-11-10
 
 - 공용 Model Mesh Cutter 창에 모델 루트와 하위 메시 전체·개별 선택을 추가합니다.
