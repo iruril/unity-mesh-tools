@@ -56,7 +56,7 @@ namespace MeshTools.Dismemberment.Editor
             m_connected = BuildConnectedTriangles();
             m_baked = new Mesh
             {
-                name = "Skinned cut brush pose",
+                name = "Skeletal Mesh Cutter brush pose",
                 hideFlags = HideFlags.HideAndDontSave
             };
 

@@ -274,7 +274,7 @@ namespace MeshTools.Dismemberment.Editor
                 bool keepRoots = false;
                 Undo.IncrementCurrentGroup();
                 int undoGroup = Undo.GetCurrentGroup();
-                Undo.SetCurrentGroupName("Generate skinned cut");
+                Undo.SetCurrentGroupName("절단 결과 생성");
 
                 try
                 {
@@ -360,7 +360,7 @@ namespace MeshTools.Dismemberment.Editor
                     if (!partOnly && m_applyRemainingMesh)
                     {
                         SaveAsset(result.Remainder, stem + "_REMAIN_SOURCE.asset", assets, createdPaths);
-                        Undo.RecordObject(m_source, "Apply remaining skinned mesh");
+                        Undo.RecordObject(m_source, "남은 메시 적용");
                         m_source.sharedMesh = result.Remainder;
                         m_source.sharedMaterials = OutputMaterials(result.Remainder, remainingCap);
                         RecordRendererChange(m_source);
@@ -381,7 +381,7 @@ namespace MeshTools.Dismemberment.Editor
                     {
                         foreach (GameObject root in roots)
                         {
-                            Undo.RegisterCreatedObjectUndo(root, "Create skinned cut output");
+                            Undo.RegisterCreatedObjectUndo(root, "절단 출력 생성");
                         }
 
                         // 원본에 남은 메시를 적용하면 중복 몸체는 생성하지 않는다.

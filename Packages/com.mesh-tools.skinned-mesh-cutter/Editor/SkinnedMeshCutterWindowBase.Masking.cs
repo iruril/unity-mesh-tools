@@ -260,8 +260,8 @@ namespace MeshTools.Dismemberment.Editor
 
             Undo.IncrementCurrentGroup();
             m_maskStrokeGroup = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName("Paint skinned cut mask");
-            Undo.RegisterCompleteObjectUndo(this, "Paint skinned cut mask");
+            Undo.SetCurrentGroupName("절단 마스크 칠하기");
+            Undo.RegisterCompleteObjectUndo(this, "절단 마스크 칠하기");
         }
 
         /// <summary>브러시 획을 확정하고 미리보기를 갱신합니다.</summary>
@@ -354,7 +354,7 @@ namespace MeshTools.Dismemberment.Editor
         public void ClearTriangleMask()
         {
             DisposeMaskResources();
-            Undo.RegisterCompleteObjectUndo(this, "Clear skinned cut mask");
+            Undo.RegisterCompleteObjectUndo(this, "절단 마스크 지우기");
             m_triangleMask = Array.Empty<SkinnedMeshCutMaskMode>();
             m_maskSourceMesh = m_source != null ? m_source.sharedMesh : null;
             m_maskTopologyHash = 0;

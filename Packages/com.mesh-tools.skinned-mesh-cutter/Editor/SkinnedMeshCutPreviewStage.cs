@@ -139,7 +139,7 @@ namespace MeshTools.Dismemberment.Editor
         /// <summary>미리보기 스테이지의 헤더 정보를 반환합니다.</summary>
         protected override GUIContent CreateHeaderContent()
         {
-            return new GUIContent("Skinned Cut · T-pose 편집 복제본");
+            return new GUIContent("Skeletal Mesh Cutter · T-pose 편집 복제본");
         }
 
         /// <summary>원본 본에 대응하는 미리보기 본을 찾습니다.</summary>
@@ -183,7 +183,7 @@ namespace MeshTools.Dismemberment.Editor
             }
 
             m_animator.Rebind();
-            m_graph = PlayableGraph.Create("Skinned cut authoring pose");
+            m_graph = PlayableGraph.Create("Skeletal Mesh Cutter authoring pose");
             m_graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
             AnimationClipPlayable playable = AnimationClipPlayable.Create(m_graph, clip);
             playable.SetApplyFootIK(false);

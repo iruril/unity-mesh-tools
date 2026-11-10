@@ -7,7 +7,7 @@ Unity 2022.3 LTS와 Unity 6에서 스킨드 메시를 절단하고 마스크, �
 Unity Package Manager의 **Add package from git URL**에서 다음 URL을 입력합니다.
 
 ```text
-https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.2
+https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.3
 ```
 
 | Unity 버전 | ProBuilder 버전 |
