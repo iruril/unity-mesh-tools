@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -16,6 +17,7 @@ namespace MeshTools.Dismemberment.Editor
         private SkinnedMeshRenderer m_source;
         private readonly Dictionary<Transform, Transform> m_map = new Dictionary<Transform, Transform>();
         private readonly Dictionary<Transform, PoseData> m_initialPose = new Dictionary<Transform, PoseData>();
+        private readonly Dictionary<SkinnedMeshRenderer, SkinnedMeshRenderer> m_renderers = new Dictionary<SkinnedMeshRenderer, SkinnedMeshRenderer>();
         private SkinnedMeshRenderer m_renderer;
         private MeshRenderer m_part;
         private MeshRenderer m_remainder;
@@ -80,6 +82,7 @@ namespace MeshTools.Dismemberment.Editor
             m_renderer.localBounds = m_source.localBounds;
             m_renderer.quality = m_source.quality;
             m_renderer.updateWhenOffscreen = true;
+            m_renderers.Add(m_source, m_renderer);
             m_part = CreateResultRenderer("Cut PART");
             m_remainder = CreateResultRenderer("Cut REMAIN");
             m_bakedPart = new Mesh
@@ -133,6 +136,7 @@ namespace MeshTools.Dismemberment.Editor
 
             m_map.Clear();
             m_initialPose.Clear();
+            m_renderers.Clear();
             base.OnCloseStage();
         }
 
@@ -162,6 +166,21 @@ namespace MeshTools.Dismemberment.Editor
             }
 
             return clone;
+        }
+
+        /// <summary>같은 리그의 렌더러를 한 번만 복제하고 본을 작성 계층에 연결합니다.</summary>
+        public SkinnedMeshRenderer IncludeRenderer(SkinnedMeshRenderer source,
+            Func<SkinnedMeshRenderer, Material[]> resolveMaterials = null)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (m_renderers.TryGetValue(source, out var cached) && cached != null) return cached;
+            var skin = IncludePath(source.transform).gameObject.AddComponent<SkinnedMeshRenderer>();
+            EditorUtility.CopySerialized(source, skin);
+            skin.bones = Array.ConvertAll(source.bones, bone => bone != null ? IncludePath(bone) : null);
+            skin.rootBone = source.rootBone != null ? IncludePath(source.rootBone) : null;
+            if (resolveMaterials != null) skin.sharedMaterials = resolveMaterials(source);
+            m_renderers[source] = skin;
+            return skin;
         }
 
         /// <summary>지정한 애니메이션 시간의 자세를 미리보기 리그에 적용합니다.</summary>

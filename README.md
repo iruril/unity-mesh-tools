@@ -7,7 +7,7 @@ Unity 2022.3 LTS와 Unity 6에서 스킨드 메시를 절단하고 마스크, �
 Unity Package Manager의 **Add package from git URL**에서 다음 URL을 입력합니다.
 
 ```text
-https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.3
+https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.4
 ```
 
 | Unity 버전 | ProBuilder 버전 |
@@ -58,6 +58,15 @@ https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.ski
 
 패키지를 업데이트하려면 Package Manager에서 위 Git URL의 태그를 원하는 버전으로 지정합니다.
 새 설정과 패키지 수정 사항은 이후 생성하는 출력에 적용되므로, 이미 생성한 출력은 같은 절단 설정으로 다시 생성해야 합니다.
+
+## 전용 에디터에 연결하기
+
+`MeshTools.Dismemberment.Editor` 네임스페이스의 API를 사용합니다.
+
+- `SkinnedMeshCutModelUtility`: 하위 메시 조회, 기준 메시 선택, 저장된 경로 선택과 마스크 검증. `SelectRenderers`의 키 함수에 기존 프리셋의 경로 계산을 전달할 수 있습니다.
+- `SkinnedMeshCutPreviewStage.IncludeRenderer`: 열린 미리보기 스테이지에 렌더러를 복제하고 본을 연결합니다. 같은 소스는 기존 복제본을 반환합니다.
+- `SkinnedMeshCutModelPreview`: 절단 결과와 마스크 표시를 생성합니다. 갱신 전 `Clear`, 소유 편집기를 닫을 때 `Dispose`를 호출합니다. `AddMask`로 전달한 메시의 소유권은 호출자에게 있습니다.
+- `SkinnedMeshCutterWindowBase`를 상속하면 `ModelOutputMaterials`와 `CreateModelOutputRenderer`로 출력 재질과 본 연결을 재사용할 수 있습니다. 출력 메시와 저장 자산은 호출자가 관리합니다.
 
 ## 라이선스
 

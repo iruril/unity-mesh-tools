@@ -3,26 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace MeshTools.Dismemberment.Editor
 {
     public sealed partial class SkinnedMeshModelCutterWindow
     {
-        private readonly List<GameObject> m_sourcePreviewObjects = new List<GameObject>();
-        private readonly List<Mesh> m_sourcePreviewMeshes = new List<Mesh>();
+        private readonly SkinnedMeshCutModelPreview m_modelPreview = new SkinnedMeshCutModelPreview();
         private double m_sourcePreviewAt = -1d;
         private UnityEngine.Object m_sourcePreviewStage;
         private string m_sourcePreviewDisplay;
         private object m_sourcePreviewResult;
 
-        private void ClearModelPreview()
-        {
-            foreach (GameObject item in m_sourcePreviewObjects) if (item != null) DestroyImmediate(item);
-            foreach (Mesh mesh in m_sourcePreviewMeshes) if (mesh != null) DestroyImmediate(mesh);
-            m_sourcePreviewObjects.Clear();
-            m_sourcePreviewMeshes.Clear();
-        }
+        private void ClearModelPreview() => m_modelPreview.Clear();
 
         protected override void RefreshCutPreview()
         {
@@ -125,35 +117,11 @@ namespace MeshTools.Dismemberment.Editor
         private void AddSourcePreview(SkinnedMeshRenderer source, SkinnedMeshRenderer author, Mesh mesh,
             Material cap, Vector3 separation, string suffix)
         {
-            if (mesh == null) return;
-            Mesh baked = new Mesh { name = source.name + " " + suffix, hideFlags = HideFlags.HideAndDontSave };
-            m_sourcePreviewMeshes.Add(baked);
-            Mesh original = author.sharedMesh;
-            try
-            {
-                author.sharedMesh = mesh;
-                author.BakeMesh(baked, true);
-            }
-            finally { author.sharedMesh = original; }
-            var item = new GameObject(source.name + " " + suffix) { hideFlags = HideFlags.HideAndDontSave };
-            m_sourcePreviewObjects.Add(item);
-            SceneManager.MoveGameObjectToScene(item, author.gameObject.scene);
-            item.transform.SetParent(author.transform, false);
-            item.transform.localPosition = author.transform.InverseTransformVector(separation);
-            item.AddComponent<MeshFilter>().sharedMesh = baked;
-            var renderer = item.AddComponent<MeshRenderer>();
-            renderer.sharedMaterials = ModelMaterials(source, mesh, cap);
-            renderer.enabled = source.enabled;
+            if (mesh != null) m_modelPreview.Add(source, author, mesh,
+                ModelOutputMaterials(source, mesh, cap), separation, suffix);
         }
 
         private void AddSourceMaskPreview(SkinnedMeshRenderer source, SkinnedMeshRenderer author, Mesh mesh, Material[] materials)
-        {
-            var item = new GameObject(source.name + " MASK") { hideFlags = HideFlags.HideAndDontSave };
-            m_sourcePreviewObjects.Add(item);
-            SceneManager.MoveGameObjectToScene(item, author.gameObject.scene);
-            item.transform.SetParent(author.transform, false);
-            item.AddComponent<MeshFilter>().sharedMesh = mesh;
-            item.AddComponent<MeshRenderer>().sharedMaterials = materials;
-        }
+            => m_modelPreview.AddMask(source, author, mesh, materials);
     }
 }

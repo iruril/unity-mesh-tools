@@ -288,6 +288,97 @@ namespace MeshTools.Dismemberment.Editor.Tests
                 .GetComponentsInChildren<SkinnedMeshRenderer>(true).Length, Is.EqualTo(2));
         }
 
+        [Test]
+        public void SharedSelection_PreservesLegacyAndComponentKeysAndRejectsMissingPaths()
+        {
+            skins[1].gameObject.SetActive(false);
+            var sources = SkinnedMeshCutModelUtility.GetRenderers(model);
+            Assert.That(sources, Is.EqualTo(skins));
+            Assert.That(SkinnedMeshCutModelUtility.FindReferenceRenderer(model, skins[1].sharedMesh), Is.SameAs(skins[1]));
+            var missing = new Mesh();
+            owned.Add(missing);
+            Assert.That(SkinnedMeshCutModelUtility.FindReferenceRenderer(model, missing), Is.Null);
+            Func<SkinnedMeshRenderer, string> legacy = skin => AnimationUtility.CalculateTransformPath(skin.transform, model.transform);
+            Assert.That(SkinnedMeshCutModelUtility.SelectRenderers(sources, false, new[] { "Visuals/Clothing" }, legacy),
+                Is.EqualTo(new[] { skins[1] }));
+            Assert.That(SkinnedMeshCutModelUtility.SelectRenderers(sources, false, new[] { "Visuals/Clothing|0" },
+                skin => SkinnedMeshCutModelUtility.RendererKey(model, skin)), Is.EqualTo(new[] { skins[1] }));
+            Assert.Throws<InvalidOperationException>(() => SkinnedMeshCutModelUtility.SelectRenderers(sources, false,
+                new[] { "Missing" }, legacy));
+            Assert.Throws<InvalidOperationException>(() => SkinnedMeshCutModelUtility.SelectRenderers(sources, false,
+                Array.Empty<string>(), legacy));
+        }
+
+        [Test]
+        public void SharedMaskValidation_RejectsChangedMeshAndTopologyWithoutChangingStoredMask()
+        {
+            var mask = Mask(skins[0], SkinnedMeshCutMaskMode.KeepPart);
+            Assert.That(SkinnedMeshCutModelUtility.ValidateMask(skins[0], mask.SourceMesh, mask.TopologyHash, mask.Triangles),
+                Is.SameAs(mask.Triangles));
+            Assert.Throws<InvalidOperationException>(() => SkinnedMeshCutModelUtility.ValidateMask(skins[0],
+                skins[1].sharedMesh, mask.TopologyHash, mask.Triangles));
+            Assert.Throws<InvalidOperationException>(() => SkinnedMeshCutModelUtility.ValidateMask(skins[0],
+                mask.SourceMesh, mask.TopologyHash + 1, mask.Triangles));
+            Assert.That(mask.Triangles.All(mode => mode == SkinnedMeshCutMaskMode.KeepPart), Is.True);
+        }
+
+        [Test]
+        public void SharedPreview_RestoresAuthorMeshAndDisposesOnlyOwnedResources()
+        {
+            var original = skins[0].sharedMesh;
+            var cut = Object.Instantiate(original);
+            owned.Add(cut);
+            var borrowedMask = Object.Instantiate(original);
+            owned.Add(borrowedMask);
+            var preview = new SkinnedMeshCutModelPreview();
+            try
+            {
+                skins[0].enabled = false;
+                Vector3 separation = new Vector3(1, 2, 3);
+                preview.Add(skins[0], skins[0], cut, skins[0].sharedMaterials, separation, "PART");
+                preview.AddMask(skins[1], skins[1], borrowedMask, skins[1].sharedMaterials);
+                var display = skins[0].transform.Find("Body PART");
+                var baked = display.GetComponent<MeshFilter>().sharedMesh;
+                Assert.That(skins[0].sharedMesh, Is.SameAs(original));
+                Assert.That(baked, Is.Not.SameAs(cut));
+                Assert.That(baked.vertexCount, Is.EqualTo(cut.vertexCount));
+                Assert.That(display.GetComponent<MeshRenderer>().enabled, Is.False);
+                Assert.That(Vector3.Distance(display.position - skins[0].transform.position, separation), Is.LessThan(.00001f));
+                preview.Clear();
+                Assert.That(display == null && baked == null, Is.True);
+                Assert.That(cut != null && borrowedMask != null && original != null, Is.True);
+                Assert.That(skins[1].transform.Find("Clothing MASK") == null, Is.True);
+            }
+            finally { preview.Dispose(); }
+        }
+
+        [Test]
+        public void SharedAuthoringRenderer_ReusesCloneAndMapsBonesWithoutChangingSource()
+        {
+            var previous = StageUtility.GetCurrentStage();
+            var stage = ScriptableObject.CreateInstance<SkinnedMeshCutPreviewStage>();
+            stage.Initialize(skins[0]);
+            try
+            {
+                StageUtility.GoToStage(stage, true);
+                int materialRequests = 0;
+                var author = stage.IncludeRenderer(skins[1], source => { materialRequests++; return source.sharedMaterials; });
+                Assert.That(stage.IncludeRenderer(skins[1], source => { materialRequests++; return source.sharedMaterials; }), Is.SameAs(author));
+                Assert.That(materialRequests, Is.EqualTo(1));
+                Assert.That(stage.IncludeRenderer(skins[0]), Is.SameAs(stage.Renderer));
+                Assert.That(author.bones[0], Is.SameAs(stage.Map(bone)));
+                Assert.That(author.rootBone, Is.SameAs(stage.Map(skins[1].rootBone)));
+                Assert.That(author.sharedMesh, Is.SameAs(skins[1].sharedMesh));
+                Assert.That(skins[1].bones[0], Is.SameAs(bone));
+                Assert.That(author.gameObject.scene, Is.Not.EqualTo(scene));
+            }
+            finally
+            {
+                StageUtility.GoToStage(previous, false);
+                if (stage != null) Object.DestroyImmediate(stage);
+            }
+        }
+
         private SkinnedMeshCutModelSettings Settings => (SkinnedMeshCutModelSettings)Field("m_modelSettings").GetValue(window);
 
         private static FieldInfo Field(string name)

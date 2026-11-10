@@ -14,8 +14,6 @@ namespace MeshTools.Dismemberment.Editor
         [SerializeField] private SkinnedMeshCutModelSettings m_modelSettings = new SkinnedMeshCutModelSettings();
         [SerializeField] private string m_maskRendererPath;
         private readonly Dictionary<string, SkinnedMeshCutMaskEditor> m_maskEditors = new Dictionary<string, SkinnedMeshCutMaskEditor>();
-        private readonly Dictionary<SkinnedMeshRenderer, SkinnedMeshRenderer> m_authorRenderers = new Dictionary<SkinnedMeshRenderer, SkinnedMeshRenderer>();
-        private SkinnedMeshCutPreviewStage m_authorStage;
 
         protected override string WindowTitle => "Skeletal Mesh Cutter";
 
@@ -29,9 +27,7 @@ namespace MeshTools.Dismemberment.Editor
 
         public void SetModel(GameObject model)
         {
-            var reference = model != null ? model.GetComponentsInChildren<SkinnedMeshRenderer>(true)
-                .Where(skin => skin.sharedMesh != null).OrderByDescending(skin => skin.bones.Length)
-                .ThenByDescending(skin => skin.sharedMesh.vertexCount).FirstOrDefault() : null;
+            var reference = SkinnedMeshCutModelUtility.FindReferenceRenderer(model);
             SetSource(reference);
             m_model = model;
             m_outputName = model != null ? model.name : string.Empty;
@@ -71,17 +67,9 @@ namespace MeshTools.Dismemberment.Editor
             base.OnDisable();
         }
 
-        private SkinnedMeshRenderer[] ModelRenderers()
-        {
-            return m_model != null ? m_model.GetComponentsInChildren<SkinnedMeshRenderer>(true)
-                .Where(skin => skin.sharedMesh != null).ToArray() : Array.Empty<SkinnedMeshRenderer>();
-        }
+        private SkinnedMeshRenderer[] ModelRenderers() => SkinnedMeshCutModelUtility.GetRenderers(m_model);
 
-        private string RendererPath(SkinnedMeshRenderer skin)
-        {
-            return AnimationUtility.CalculateTransformPath(skin.transform, m_model.transform)
-                + "|" + Array.IndexOf(skin.GetComponents<SkinnedMeshRenderer>(), skin);
-        }
+        private string RendererPath(SkinnedMeshRenderer skin) => SkinnedMeshCutModelUtility.RendererKey(m_model, skin);
 
         private string RendererLabel(SkinnedMeshRenderer skin)
         {
@@ -96,15 +84,8 @@ namespace MeshTools.Dismemberment.Editor
             var sources = ModelRenderers();
             if (sources.Select(RendererPath).Distinct().Count() != sources.Length)
                 throw new InvalidOperationException("메시 경로가 중복됩니다. 같은 부모 아래의 모델 오브젝트 이름을 구분하세요.");
-            if (!m_modelSettings.AllRenderers)
-            {
-                var paths = new HashSet<string>(m_modelSettings.RendererPaths);
-                sources = sources.Where(skin => paths.Contains(RendererPath(skin))).ToArray();
-                if (sources.Length != paths.Count)
-                    throw new InvalidOperationException("저장한 메시 경로를 찾을 수 없습니다. 절단 대상을 다시 선택하세요.");
-            }
-            if (sources.Length == 0) throw new InvalidOperationException("절단할 메시를 하나 이상 선택하세요.");
-            return sources;
+            return SkinnedMeshCutModelUtility.SelectRenderers(sources, m_modelSettings.AllRenderers,
+                m_modelSettings.RendererPaths, RendererPath);
         }
 
         protected override void DrawSource()
@@ -140,23 +121,7 @@ namespace MeshTools.Dismemberment.Editor
             => m_previewStage != null ? m_previewStage.IncludePath(source) : source;
 
         private SkinnedMeshRenderer AuthorRenderer(SkinnedMeshRenderer source)
-        {
-            if (m_previewStage == null) return source;
-            if (source == m_source) return m_previewStage.Renderer;
-            if (m_authorStage != m_previewStage)
-            {
-                m_authorRenderers.Clear();
-                m_authorStage = m_previewStage;
-            }
-            if (m_authorRenderers.TryGetValue(source, out var cached) && cached != null) return cached;
-            Transform node = AuthorBone(source.transform);
-            var skin = node.gameObject.AddComponent<SkinnedMeshRenderer>();
-            EditorUtility.CopySerialized(source, skin);
-            skin.bones = source.bones.Select(AuthorBone).ToArray();
-            skin.rootBone = source.rootBone != null ? AuthorBone(source.rootBone) : null;
-            m_authorRenderers.Add(source, skin);
-            return skin;
-        }
+            => m_previewStage != null ? m_previewStage.IncludeRenderer(source) : source;
 
         private SkinnedMeshCutMaskEditor MaskEditor(SkinnedMeshRenderer source)
         {
@@ -256,11 +221,8 @@ namespace MeshTools.Dismemberment.Editor
         private SkinnedMeshCutMaskMode[] RendererMask(SkinnedMeshRenderer source)
         {
             var mask = m_modelSettings.Masks.FirstOrDefault(item => item.Path == RendererPath(source));
-            if (mask == null) return source == m_source ? m_triangleMask : null;
-            if (mask.Triangles.Length > 0 && (mask.SourceMesh != source.sharedMesh
-                || mask.TopologyHash != SkinnedMeshCutBrushSurface.GetTopologyHash(source.sharedMesh)))
-                throw new InvalidOperationException(source.name + "의 메시 구조가 바뀌었습니다. 해당 마스크를 초기화하세요.");
-            return mask.Triangles;
+            return mask == null ? source == m_source ? m_triangleMask : null
+                : SkinnedMeshCutModelUtility.ValidateMask(source, mask.SourceMesh, mask.TopologyHash, mask.Triangles);
         }
 
         public override SkinnedMeshCutPreset CapturePreset()

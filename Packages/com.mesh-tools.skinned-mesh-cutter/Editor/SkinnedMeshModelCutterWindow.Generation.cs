@@ -11,14 +11,7 @@ namespace MeshTools.Dismemberment.Editor
     public sealed partial class SkinnedMeshModelCutterWindow
     {
         private Material[] ModelMaterials(SkinnedMeshRenderer source, Mesh mesh, Material cap)
-        {
-            var original = source == m_source ? SurfaceMaterials() : ResolveSurfaceMaterials(source, SurfaceMaterialOwner);
-            var materials = new Material[mesh.subMeshCount];
-            for (int i = 0; i < materials.Length; i++)
-                materials[i] = i < source.sharedMesh.subMeshCount
-                    ? original.Length > 0 ? original[Mathf.Min(i, original.Length - 1)] : null : cap;
-            return materials;
-        }
+            => ModelOutputMaterials(source, mesh, cap);
 
         protected override UnityEngine.Object[] GenerateAssetsCore(bool partOnly)
         {
@@ -92,15 +85,8 @@ namespace MeshTools.Dismemberment.Editor
                             meshes.Add(mesh);
                             SaveAsset(mesh, stem + "_" + i + "_" + suffix + ".asset", assets, paths);
                             var input = authors[i];
-                            Transform node = CloneTransformPath(input.transform, root.transform, frame.inverse, map);
-                            var output = node.gameObject.AddComponent<SkinnedMeshRenderer>();
-                            EditorUtility.CopySerialized(input, output);
-                            output.sharedMesh = mesh;
-                            output.bones = indices.Select(index => CloneTransformPath(input.bones[index], root.transform, frame.inverse, map)).ToArray();
-                            output.rootBone = input.rootBone != null
-                                ? CloneTransformPath(input.rootBone, root.transform, frame.inverse, map) : model;
-                            output.sharedMaterials = ModelMaterials(sources[i], mesh, cap);
-                            output.enabled = sources[i].enabled;
+                            var output = CreateModelOutputRenderer(sources[i], input, mesh, indices,
+                                root.transform, frame.inverse, map, model, cap);
                             SetOutputBounds(output);
                             outputCount++;
                         }
