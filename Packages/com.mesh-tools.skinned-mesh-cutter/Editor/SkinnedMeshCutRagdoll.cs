@@ -38,6 +38,8 @@ namespace MeshTools.Dismemberment.Editor
         private Scene m_scene;
         private readonly Dictionary<Transform, Rigidbody> m_bodies = new Dictionary<Transform, Rigidbody>();
         public GameObject Root { get; private set; }
+        private Transform m_authoringRoot;
+        internal IReadOnlyDictionary<Transform, Rigidbody> Bodies => m_bodies;
 
         #region 리그 검증과 준비
 
@@ -107,6 +109,20 @@ namespace MeshTools.Dismemberment.Editor
             float mass,
             bool tips)
         {
+            return Prepare(source, author, authorBone, mode, existing, mass, tips, null);
+        }
+
+        /// <summary>Includes physics bones used only by additional model renderers.</summary>
+        public static SkinnedMeshCutRagdoll Prepare(
+            SkinnedMeshRenderer source,
+            SkinnedMeshRenderer author,
+            Func<Transform, Transform> authorBone,
+            SkinnedMeshCutRagdollMode mode,
+            GameObject existing,
+            float mass,
+            bool tips,
+            SkinnedMeshRenderer[] modelRenderers)
+        {
             if (mode == SkinnedMeshCutRagdollMode.None)
             {
                 return null;
@@ -131,7 +147,12 @@ namespace MeshTools.Dismemberment.Editor
                     physicsRoot = result.GeneratePhysicsRig(source, rig, authorBone, mass, tips);
                 }
 
+                result.m_authoringRoot = authorBone(rig);
                 result.RegisterSourceBodies(source, rig, physicsRoot, authorBone);
+                foreach (var skin in modelRenderers ?? Array.Empty<SkinnedMeshRenderer>())
+                    if (skin != source) result.RegisterSourceBodies(skin, rig, physicsRoot, authorBone);
+                if (result.m_bodies.Count == 0)
+                    throw new InvalidOperationException("소스 스켈레톤과 일치하는 래그돌 본이 없습니다. 같은 리그의 루트 오브젝트를 지정하세요.");
 
                 return result;
             }
@@ -259,14 +280,10 @@ namespace MeshTools.Dismemberment.Editor
 
                 if (original != null && skeleton.Contains(original))
                 {
-                    m_bodies.Add(authorBone(original), body);
+                    m_bodies[authorBone(original)] = body;
                 }
             }
 
-            if (m_bodies.Count == 0)
-            {
-                throw new InvalidOperationException("소스 스켈레톤과 일치하는 래그돌 본이 없습니다. 같은 리그의 루트 오브젝트를 지정하세요.");
-            }
         }
 
         #endregion
@@ -281,15 +298,35 @@ namespace MeshTools.Dismemberment.Editor
             Plane cutPlane,
             List<Mesh> meshes)
         {
-            SkinnedMeshRenderer skin = output.GetComponent<SkinnedMeshRenderer>();
-            Transform[] owners = FindPhysicsOwners(skin, map);
-            Dictionary<Transform, List<Vector3>> points = CollectOwnedSurfacePoints(skin, owners);
+            CopyTo(output, map, clone, cutPlane, meshes, null);
+        }
+
+        public void CopyTo(
+            GameObject output,
+            Dictionary<Transform, Transform> map,
+            Func<Transform, Transform> clone,
+            Plane cutPlane,
+            List<Mesh> meshes,
+            Func<Collider, bool> includeCollider)
+        {
+            var points = new Dictionary<Transform, List<Vector3>>();
+            var rootSkin = output.GetComponent<SkinnedMeshRenderer>();
+            var skins = rootSkin != null ? new[] { rootSkin } : output.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            foreach (var skin in skins)
+            {
+                var surface = CollectOwnedSurfacePoints(skin, FindPhysicsOwners(skin, map));
+                foreach (var pair in surface)
+                {
+                    if (!points.TryGetValue(pair.Key, out var collected)) points.Add(pair.Key, pair.Value);
+                    else collected.AddRange(pair.Value);
+                }
+            }
             Dictionary<Rigidbody, Rigidbody> bodies = new Dictionary<Rigidbody, Rigidbody>();
 
             foreach (KeyValuePair<Transform, List<Vector3>> pair in points)
             {
                 Rigidbody original = m_bodies[pair.Key];
-                Rigidbody copy = CopyBody(original, clone(pair.Key), pair.Value, cutPlane, meshes);
+                Rigidbody copy = CopyBody(original, clone(pair.Key), pair.Value, cutPlane, meshes, includeCollider);
 
                 if (copy != null)
                 {
@@ -297,12 +334,53 @@ namespace MeshTools.Dismemberment.Editor
                 }
             }
 
-            if (bodies.Count == 0)
+            if (bodies.Count == 0 && includeCollider == null)
             {
                 throw new InvalidOperationException("절단 결과에 대응하는 래그돌 본이 없습니다.");
             }
 
             CopyJoints(bodies);
+        }
+
+        /// <summary>
+        /// Removes affected output bodies with no owned physical colliders, their remaining triggers,
+        /// and joints on or connected to them. Other bodies and all transforms are preserved.
+        /// Call before adding runtime sensors. The callback can clear project-specific references.
+        /// </summary>
+        public static int RemoveEmptyBodies(GameObject output, IEnumerable<Rigidbody> affectedBodies,
+            Action<Rigidbody> beforeRemove = null)
+        {
+            if (output == null) throw new ArgumentNullException(nameof(output));
+            if (affectedBodies == null) throw new ArgumentNullException(nameof(affectedBodies));
+            var removed = new HashSet<Rigidbody>(affectedBodies.Where(body => body != null));
+            if (removed.Any(body => body.transform != output.transform && !body.transform.IsChildOf(output.transform)))
+                throw new ArgumentException("Affected bodies must belong to the output hierarchy.", nameof(affectedBodies));
+            // Resolve compound ownership before deletion can transfer child shapes to an ancestor.
+            var colliders = output.GetComponentsInChildren<Collider>(true);
+            foreach (var collider in colliders)
+                if (!collider.isTrigger) removed.Remove(collider.GetComponentInParent<Rigidbody>(true));
+            if (removed.Count == 0) return 0;
+            var triggers = colliders.Where(collider => removed.Contains(collider.GetComponentInParent<Rigidbody>(true))).ToArray();
+            foreach (var body in removed) beforeRemove?.Invoke(body);
+            foreach (var joint in output.GetComponentsInChildren<Joint>(true))
+                if (removed.Contains(joint.GetComponent<Rigidbody>()) || removed.Contains(joint.connectedBody))
+                    UnityEngine.Object.DestroyImmediate(joint);
+            foreach (var trigger in triggers) UnityEngine.Object.DestroyImmediate(trigger);
+            foreach (var body in removed) UnityEngine.Object.DestroyImmediate(body);
+            return removed.Count;
+        }
+
+        internal string ColliderKey(Transform authorBone, Rigidbody body, Collider collider)
+        {
+            return AnimationUtility.CalculateTransformPath(authorBone, m_authoringRoot) + "|"
+                + AnimationUtility.CalculateTransformPath(collider.transform, body.transform) + "|"
+                + Array.IndexOf(collider.GetComponents<Collider>(), collider);
+        }
+
+        internal string ColliderKey(Collider collider)
+        {
+            Rigidbody body = collider.GetComponentInParent<Rigidbody>(true);
+            return ColliderKey(m_bodies.First(pair => pair.Value == body).Key, body, collider);
         }
 
         /// <summary>출력 스킨의 각 본에 대응하는 가장 가까운 상위 물리 본을 찾습니다.</summary>
@@ -378,16 +456,22 @@ namespace MeshTools.Dismemberment.Editor
             Transform bone,
             List<Vector3> points,
             Plane cutPlane,
-            List<Mesh> meshes)
+            List<Mesh> meshes,
+            Func<Collider, bool> includeCollider)
         {
             Plane[] planes = BuildColliderClipPlanes(points, cutPlane);
             // 저장된 프리팹에서는 attachedRigidbody 대신 부모 계층으로 콜라이더 소유자를 확인한다.
             Collider[] sourceColliders = original.GetComponentsInChildren<Collider>(true).Where(collider => collider.GetComponentInParent<Rigidbody>(true) == original)
                 .ToArray();
+            // A sensor must not keep an otherwise excluded physical bone alive.
+            var physicalColliders = sourceColliders.Where(collider => !collider.isTrigger).ToArray();
+            if (includeCollider != null && physicalColliders.Length > 0
+                && physicalColliders.All(collider => !includeCollider(collider))) return null;
             int copiedColliders = 0;
 
             foreach (Collider collider in sourceColliders)
             {
+                if (includeCollider != null && !includeCollider(collider)) continue;
                 Transform target = ColliderPath(collider.transform, original.transform, bone);
                 target.gameObject.layer = collider.gameObject.layer;
 

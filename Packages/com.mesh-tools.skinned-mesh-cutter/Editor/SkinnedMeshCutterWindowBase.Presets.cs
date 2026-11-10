@@ -84,7 +84,7 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>현재 편집 설정을 저장 가능한 프리셋으로 복사합니다.</summary>
-        public SkinnedMeshCutPreset CapturePreset()
+        public virtual SkinnedMeshCutPreset CapturePreset()
         {
             string error = ValidateMaskTopology(true);
 
@@ -116,7 +116,7 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>저장된 프리셋을 현재 리그와 창 설정에 적용합니다.</summary>
-        public void ApplyPreset(SkinnedMeshCutPreset preset)
+        public virtual void ApplyPreset(SkinnedMeshCutPreset preset)
         {
             if (preset.SourceMesh != m_source.sharedMesh)
             {

@@ -7,6 +7,7 @@ namespace MeshTools.Dismemberment.Editor
     [MovedFrom(true, "Irony.Dismemberment.Editor", "Irony.SkinnedMeshCutter.Editor", null)]
     public sealed class SkinnedMeshCutPreset : ScriptableObject
     {
+        public SkinnedMeshCutModelSettings ModelSettings;
         [SerializeField]
         private Mesh m_sourceMesh;
         [SerializeField]

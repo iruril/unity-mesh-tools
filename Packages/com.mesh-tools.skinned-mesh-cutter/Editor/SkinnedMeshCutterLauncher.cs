@@ -13,7 +13,7 @@ namespace MeshTools.Dismemberment.Editor
         {
             var window = WindowFactory != null
                 ? WindowFactory()
-                : EditorWindow.GetWindow<SkinnedMeshCutterWindowBase>();
+                : EditorWindow.GetWindow<SkinnedMeshModelCutterWindow>();
             window.UseSelectionIfEmpty();
             window.Show();
         }

@@ -28,7 +28,7 @@ namespace MeshTools.Dismemberment.Editor
         protected virtual string[] RagdollModeLabels => RagdollLabels;
 
         /// <summary>래그돌 복사·생성 모드와 물리 설정을 표시합니다.</summary>
-        protected void DrawRagdollSettings()
+        protected virtual void DrawRagdollSettings()
         {
             m_ragdollExpanded = ViewFoldout(m_ragdollExpanded, "절단 전 래그돌 준비");
 

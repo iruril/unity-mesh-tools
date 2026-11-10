@@ -54,7 +54,7 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>현재 설정으로 절단을 계산하고 미리보기 또는 진단 경계를 갱신합니다.</summary>
-        protected void RefreshCutPreview()
+        protected virtual void RefreshCutPreview()
         {
             ClearPreview();
             m_previewDirty = false;
@@ -148,7 +148,7 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>현재 절단 메시지와 표시 재질을 스테이지에 반영합니다.</summary>
-        protected void UpdateStageResult()
+        protected virtual void UpdateStageResult()
         {
             if (m_previewStage == null)
             {
@@ -238,7 +238,7 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>Scene 뷰에서 평면 핸들·브러시·경계 표시를 처리합니다.</summary>
-        protected void HandleSceneGui(SceneView view)
+        protected virtual void HandleSceneGui(SceneView view)
         {
             if (!m_showScenePreview || m_source == null || !m_planeInitialized
                 || EditorApplication.isPlayingOrWillChangePlaymode)

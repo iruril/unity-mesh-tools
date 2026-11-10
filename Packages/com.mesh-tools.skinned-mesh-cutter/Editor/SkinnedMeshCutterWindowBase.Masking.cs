@@ -57,7 +57,7 @@ namespace MeshTools.Dismemberment.Editor
         private string m_maskValidationError;
 
         /// <summary>브러시 모드와 크기 및 표면 선택 설정을 표시합니다.</summary>
-        protected void DrawMaskSettings()
+        protected virtual void DrawMaskSettings()
         {
             bool wasChanged = GUI.changed;
             EditorGUI.BeginChangeCheck();

@@ -209,7 +209,7 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>출력 폴더와 현재 설정을 검증한 뒤 생성을 실행합니다.</summary>
-        protected UnityEngine.Object[] GenerateAssetsCore(bool partOnly)
+        protected virtual UnityEngine.Object[] GenerateAssetsCore(bool partOnly)
         {
             m_validatedMaskMesh = null;
             string error = GetValidationError();

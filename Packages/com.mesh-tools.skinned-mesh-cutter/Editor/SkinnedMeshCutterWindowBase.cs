@@ -326,7 +326,7 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>현재 선택한 오브젝트에서 편집할 스킨을 찾습니다.</summary>
-        protected void UseSelection()
+        protected virtual void UseSelection()
         {
             GameObject selected = Selection.activeGameObject;
 
@@ -457,7 +457,7 @@ namespace MeshTools.Dismemberment.Editor
         #region 설정 화면
 
         /// <summary>소스 스킨과 작성 포즈 선택 화면을 그립니다.</summary>
-        protected void DrawSource()
+        protected virtual void DrawSource()
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
