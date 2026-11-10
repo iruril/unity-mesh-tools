@@ -1,6 +1,6 @@
 {
   "name": "com.mesh-tools.skinned-mesh-cutter",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "displayName": "Skeletal Mesh Cutter",
   "description": "Editor tools for skinned mesh cutting, triangle masks, cap UV editing and prefab export.",
   "unity": "2022.3",

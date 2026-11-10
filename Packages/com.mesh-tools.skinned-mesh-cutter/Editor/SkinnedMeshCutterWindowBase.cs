@@ -105,7 +105,9 @@ namespace MeshTools.Dismemberment.Editor
         protected SkinnedMeshCutPreviewStage m_previewStage;
         protected Material m_checkerMaterial;
         protected Texture2D m_checkerTexture;
-        protected virtual string WindowTitle => "Skinned Mesh Cutter";
+        protected virtual string WindowTitle => "Skeletal Mesh Cutter";
+        /// <summary>창 내부에 표시할 도구 이름을 프로젝트별로 지정합니다.</summary>
+        protected virtual string HeaderTitle => WindowTitle;
         protected virtual bool PartOnlyAuthoring => false;
         protected virtual bool HasPhysicsIntegration => m_ragdollMode != SkinnedMeshCutRagdollMode.None;
         protected virtual string CurrentPartLabel => string.Empty;
@@ -195,7 +197,7 @@ namespace MeshTools.Dismemberment.Editor
             }
 
             EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Skinned Mesh Cutter", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(HeaderTitle, EditorStyles.boldLabel);
 
             using (new EditorGUI.DisabledScope(EditorApplication.isPlayingOrWillChangePlaymode))
             {
