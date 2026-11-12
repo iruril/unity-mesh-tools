@@ -16,7 +16,7 @@ namespace MeshTools.Dismemberment.Editor
     }
 
     /// <summary>절단 출력에 사용할 임시 물리 리그와 원본 본 매핑을 관리합니다.</summary>
-    public sealed class SkinnedMeshCutRagdoll : IDisposable
+    public sealed partial class SkinnedMeshCutRagdoll : IDisposable
     {
         private static readonly HumanBodyBones[] RequiredBones =
         {
@@ -534,14 +534,15 @@ namespace MeshTools.Dismemberment.Editor
         }
 
         /// <summary>강체 아래의 콜라이더 계층을 출력 본에 재현합니다.</summary>
-        private static Transform ColliderPath(Transform original, Transform body, Transform outputBody)
+        private static Transform ColliderPath(
+            Transform original, Transform body, Transform outputBody, bool recordUndo = false)
         {
             if (original == body)
             {
                 return outputBody;
             }
 
-            Transform parent = ColliderPath(original.parent, body, outputBody);
+            Transform parent = ColliderPath(original.parent, body, outputBody, recordUndo);
             Transform node = parent.Find(original.name);
 
             if (node != null)
@@ -550,6 +551,10 @@ namespace MeshTools.Dismemberment.Editor
             }
 
             node = new GameObject(original.name).transform;
+            if (recordUndo)
+            {
+                Undo.RegisterCreatedObjectUndo(node.gameObject, "래그돌 콜라이더 계층 생성");
+            }
             node.SetParent(parent, false);
             node.localPosition = original.localPosition;
             node.localRotation = original.localRotation;
