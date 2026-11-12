@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 
 namespace MeshTools.Dismemberment.Editor
@@ -148,9 +147,7 @@ namespace MeshTools.Dismemberment.Editor
         /// <summary>래그돌 레퍼런스의 콜라이더 종류와 모든 직렬화 설정을 그대로 복사합니다.</summary>
         private static Collider CopyReferenceCollider(Collider source, Transform target)
         {
-            Collider copy = (Collider)target.gameObject.AddComponent(source.GetType());
-            EditorUtility.CopySerialized(source, copy);
-            return copy;
+            return SkinnedMeshCutColliderUtility.Copy(source, target);
         }
 
         /// <summary>레퍼런스 박스·메시 콜라이더 전체가 버리는 쪽에 있는 경우만 제외합니다.</summary>

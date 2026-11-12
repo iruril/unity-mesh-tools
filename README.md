@@ -7,7 +7,7 @@ Unity 2022.3 LTS와 Unity 6에서 스킨드 메시를 절단하고 마스크, �
 Unity Package Manager의 **Add package from git URL**에서 다음 URL을 입력합니다.
 
 ```text
-https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.4
+https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.skinned-mesh-cutter#v1.2.5
 ```
 
 | Unity 버전 | ProBuilder 버전 |
@@ -63,6 +63,7 @@ https://github.com/iruril/unity-mesh-tools.git?path=/Packages/com.mesh-tools.ski
 
 `MeshTools.Dismemberment.Editor` 네임스페이스의 API를 사용합니다.
 
+- `SkinnedMeshCutColliderUtility`: `Copy`로 콜라이더 하나를 복사하고, `CopyFrom`으로 같은 로컬 좌표계를 쓰는 대상의 콜라이더 구성을 교체합니다. `IncludeAttachment`는 렌더러 범위로 박스 또는 캡슐을 확장합니다. 캡슐은 반지름을 유지하며 길이와 중심만 바뀝니다. 보관 위치와 장착 위치가 다르면 월드 좌표를 콜라이더 로컬 좌표로 옮기는 행렬을 전달합니다.
 - `SkinnedMeshCutModelUtility`: 하위 메시 조회, 기준 메시 선택, 저장된 경로 선택과 마스크 검증. `SelectRenderers`의 키 함수에 기존 프리셋의 경로 계산을 전달할 수 있습니다.
 - `SkinnedMeshCutPreviewStage.IncludeRenderer`: 열린 미리보기 스테이지에 렌더러를 복제하고 본을 연결합니다. 같은 소스는 기존 복제본을 반환합니다.
 - `SkinnedMeshCutModelPreview`: 절단 결과와 마스크 표시를 생성합니다. 갱신 전 `Clear`, 소유 편집기를 닫을 때 `Dispose`를 호출합니다. `AddMask`로 전달한 메시의 소유권은 호출자에게 있습니다.
